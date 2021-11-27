@@ -1,9 +1,22 @@
-#include <Arduino.h>
+#include "SPI.h"
+char buff[]="Hello Slave\n";
 
 void setup() {
-  // put your setup code here, to run once:
+  Serial.begin(115200);
+  Serial.println("siemanero, tu ESP!");
+  SPI.begin();
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  Serial.println("sending stuff via SPI");
+  // char recvBuff[32] = {0};
+  for(int i=0; i < sizeof buff; i++) {
+    char a = SPI.transfer(buff[i]);
+    // recvBuff[i] = a;
+    Serial.print(a);
+  }
+  Serial.print("\n");
+  // recvBuff[sizeof buff] = '\0';
+  // Serial.println(recvBuff);
+  delay(1000);  
 }
