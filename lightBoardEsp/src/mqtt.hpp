@@ -37,11 +37,14 @@ void MQTT_init () {
             delay(2000);
         }
     }
+
+    client.subscribe(topic);
 }
 
 static uint8_t mqttSendCounter = 0;
 
 void MQTT_update () {
+    client.loop();
     switch (mqttSendCounter) {
         case 0: client.publish("lightBoard/relay/0", bitRead(inputBuffer.frame.outputState, 0) ? "true" : "false"); break;
         case 1: client.publish("lightBoard/relay/1", bitRead(inputBuffer.frame.outputState, 0) ? "true" : "false"); break;
