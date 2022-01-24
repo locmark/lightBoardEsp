@@ -1,7 +1,7 @@
 #pragma once
 
 #include <SoftwareSerial.h>
-#include "spiFrames.hpp"
+#include "uartFrames.hpp"
 #include "pic.hpp"
 
 #define MYPORT_TX 12
@@ -17,6 +17,10 @@ void UART_init () {
             delay (1000);
         }
     }
+}
+
+void UART_stop () {
+    uart.end();
 }
 
 static uint16_t calcCRC (char* buff, unsigned int size) {
@@ -75,15 +79,15 @@ void UART_update () {
         shiftInputBuffer();
         uint8_t inputByte = uart.read();
         inputBuffer.data[sizeof inputBuffer.data - 1] = inputByte;
-        for (size_t j = 0; j < sizeof inputBuffer.data; j++)
-        {
-            Serial.print((int)inputBuffer.data[j], HEX);
-            Serial.print(' ');
-        }
-        Serial.print("\n");
+        // for (size_t j = 0; j < sizeof inputBuffer.data; j++)
+        // {
+        //     Serial.print((int)inputBuffer.data[j], HEX);
+        //     Serial.print(' ');
+        // }
+        // Serial.print("\n");
         
         if (isInputBufferValid()) {
-            Serial.println("frame is valid!");
+            // Serial.println("frame is valid!");
             copyInputFrameData();
         }
     }

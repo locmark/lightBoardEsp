@@ -72,5 +72,3 @@ union InputBuffer {
 
 
 union InputBuffer inputBuffer;
-
-int a = sizeof (struct InputBufferFrame);
