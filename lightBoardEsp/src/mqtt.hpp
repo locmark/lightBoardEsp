@@ -1,87 +1,164 @@
+#pragma once
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-#include "uartFrames.hpp"
 #include "secrets.hpp"
-
-constexpr const char* mqtt_broker = "192.168.1.20";
-constexpr const char* topic = "lightBoard/test";
-constexpr int mqtt_port = 1883;
+#include "uart.hpp"
+#include "machineState.hpp"
+#include "mqttConfig.hpp"
 
 static WiFiClient espClient;
 static PubSubClient client(espClient);
 
-static void callback (char* topic, byte* payload, unsigned int length) {
-    Serial.print("Message arrived in topic: ");
-    Serial.println(topic);
-    Serial.print("Message:");
-    for (int i = 0; i < length; i++) {
-        Serial.print((char) payload[i]);
+void MQTT_publishChannel0State () {
+    if(!client.publish(channel0_state, MachineState::output0 ? "ON" : "OFF")) {
+        Serial.println("[mqtt] publishing channel 0 state failed");
     }
-    Serial.println();
-    Serial.println("-----------------------");
 }
 
-void MQTT_init () {
-    // mqtt setup
-    client.setServer(mqtt_broker, mqtt_port);
-    client.setCallback(callback);
-    while (!client.connected()) {
+void MQTT_publishChannel1State () {
+    if(!client.publish(channel1_state, MachineState::output1 ? "ON" : "OFF")) {
+        Serial.println("[mqtt] publishing channel 1 state failed");
+    }
+}
+
+void MQTT_publishChannel2State () {
+    if(!client.publish(channel2_state, MachineState::output2 ? "ON" : "OFF")) {
+        Serial.println("[mqtt] publishing channel 2 state failed");
+    }
+}
+
+void MQTT_publishChannel3State () {
+    if(!client.publish(channel3_state, MachineState::output3 ? "ON" : "OFF")) {
+        Serial.println("[mqtt] publishing channel 3 state failed");
+    }
+}
+
+void MQTT_publishChannel4State () {
+    if(!client.publish(channel4_state, MachineState::output4 ? "ON" : "OFF")) {
+        Serial.println("[mqtt] publishing channel 4 state failed");
+    }
+}
+
+void MQTT_publishChannel5State () {
+    if(!client.publish(channel5_state, MachineState::output5 ? "ON" : "OFF")) {
+        Serial.println("[mqtt] publishing channel 5 state failed");
+    }
+}
+
+void MQTT_publishChannel6State () {
+    if(!client.publish(channel6_state, MachineState::output6 ? "ON" : "OFF")) {
+        Serial.println("[mqtt] publishing channel 6 state failed");
+    }
+}
+
+static void callback (char* topic, unsigned char* payload, unsigned int length) {
+    Serial.print("[mqtt] Message arrived in topic: ");
+    Serial.println(topic);
+    Serial.print("[mqtt] Message:");
+    for (unsigned int i = 0; i < length; i++) {
+        Serial.print((char)payload[i]);
+    }
+    Serial.println();
+    
+    if (strcmp(topic, channel0_command) == 0) {
+        MachineState::output0 = (payload[1] == 'N'); // detects "ON" / "OFF"
+        MQTT_publishChannel0State();
+    }
+
+    if (strcmp(topic, channel1_command) == 0) {
+        MachineState::output1 = (payload[1] == 'N'); // detects "ON" / "OFF"
+        MQTT_publishChannel1State();
+    }
+
+    if (strcmp(topic, channel2_command) == 0) {
+        MachineState::output2 = (payload[1] == 'N'); // detects "ON" / "OFF"
+        MQTT_publishChannel2State();
+    }
+
+    if (strcmp(topic, channel3_command) == 0) {
+        MachineState::output3 = (payload[1] == 'N'); // detects "ON" / "OFF"
+        MQTT_publishChannel3State();
+    }
+
+    if (strcmp(topic, channel4_command) == 0) {
+        MachineState::output4 = (payload[1] == 'N'); // detects "ON" / "OFF"
+        MQTT_publishChannel4State();
+    }
+
+    if (strcmp(topic, channel5_command) == 0) {
+        MachineState::output5 = (payload[1] == 'N'); // detects "ON" / "OFF"
+        MQTT_publishChannel5State();
+    }
+
+    if (strcmp(topic, channel6_command) == 0) {
+        MachineState::output6 = (payload[1] == 'N'); // detects "ON" / "OFF"
+        MQTT_publishChannel6State();
+    }
+}
+
+static void publishAutodiscoveryMsgs () {
+    if(!client.publish(channel0_config, channel0_config_body)) {
+        Serial.println("[mqtt] publishing channel 0 autodiscovery failed");
+    }
+    if(!client.publish(channel1_config, channel1_config_body)) {
+        Serial.println("[mqtt] publishing channel 1 autodiscovery failed");
+    }
+    if(!client.publish(channel2_config, channel2_config_body)) {
+        Serial.println("[mqtt] publishing channel 2 autodiscovery failed");
+    }
+    if(!client.publish(channel3_config, channel3_config_body)) {
+        Serial.println("[mqtt] publishing channel 3 autodiscovery failed");
+    }
+    if(!client.publish(channel4_config, channel4_config_body)) {
+        Serial.println("[mqtt] publishing channel 4 autodiscovery failed");
+    }
+    if(!client.publish(channel5_config, channel5_config_body)) {
+        Serial.println("[mqtt] publishing channel 5 autodiscovery failed");
+    }
+    if(!client.publish(channel6_config, channel6_config_body)) {
+        Serial.println("[mqtt] publishing channel 6 autodiscovery failed");
+    }
+
+}
+
+static void connectClient () {
+    if (!client.connected()) {
         String client_id = "esp8266-client-";
         client_id += String(WiFi.macAddress());
         Serial.printf("[mqtt] The client %s connects to the public mqtt broker\n", client_id.c_str());
         if (client.connect(client_id.c_str(), mqtt_username, mqtt_password)) {
             Serial.println("[mqtt] connected");
+
+            client.subscribe(channel0_command);
+            client.subscribe(channel1_command);
+            client.subscribe(channel2_command);
+            client.subscribe(channel3_command);
+            client.subscribe(channel4_command);
+            client.subscribe(channel5_command);
+            client.subscribe(channel6_command);
+
+            publishAutodiscoveryMsgs();
+
         } else {
             Serial.print("[mqtt] failed with state ");
             Serial.println(client.state());
             delay(2000);
         }
     }
-
-    client.subscribe(topic);
 }
 
-static uint8_t mqttSendCounter = 0;
+void MQTT_init () {
+    // mqtt setup
+    client.setServer(mqtt_broker, mqtt_port);
+    client.setCallback(callback);
+    
+    connectClient();
+}
 
 void MQTT_update () {
-    client.loop();
-    switch (mqttSendCounter) {
-        case 0: client.publish("lightBoard/relay/0", bitRead(inputBuffer.frame.outputState, 0) ? "true" : "false"); break;
-        case 1: client.publish("lightBoard/relay/1", bitRead(inputBuffer.frame.outputState, 0) ? "true" : "false"); break;
-        case 2: client.publish("lightBoard/relay/2", bitRead(inputBuffer.frame.outputState, 0) ? "true" : "false"); break;
-        case 3: client.publish("lightBoard/relay/3", bitRead(inputBuffer.frame.outputState, 0) ? "true" : "false"); break;
-        case 4: client.publish("lightBoard/relay/4", bitRead(inputBuffer.frame.outputState, 0) ? "true" : "false"); break;
-        case 5: client.publish("lightBoard/relay/5", bitRead(inputBuffer.frame.outputState, 0) ? "true" : "false"); break;
-        case 6: client.publish("lightBoard/relay/6", bitRead(inputBuffer.frame.outputState, 0) ? "true" : "false"); break;
+    bool isConnected = client.loop();
 
-        case 7: client.publish("lightBoard/switch/0", bitRead(inputBuffer.frame.inputState, 0) ? "true" : "false"); break;
-        case 8: client.publish("lightBoard/switch/1", bitRead(inputBuffer.frame.inputState, 0) ? "true" : "false"); break;
-        case 9: client.publish("lightBoard/switch/2", bitRead(inputBuffer.frame.inputState, 0) ? "true" : "false"); break;
-        case 10: client.publish("lightBoard/switch/3", bitRead(inputBuffer.frame.inputState, 0) ? "true" : "false"); break;
-        case 11: client.publish("lightBoard/switch/4", bitRead(inputBuffer.frame.inputState, 0) ? "true" : "false"); break;
-        case 12: client.publish("lightBoard/switch/5", bitRead(inputBuffer.frame.inputState, 0) ? "true" : "false"); break;
-        case 13: client.publish("lightBoard/switch/6", bitRead(inputBuffer.frame.inputState, 0) ? "true" : "false"); break;
-
-        case 14: client.publish("lightBoard/dimmer/0", String(inputBuffer.frame.dimmer_1).c_str()); break;
-        case 15: client.publish("lightBoard/dimmer/1", String(inputBuffer.frame.dimmer_2).c_str()); break;
-        case 16: client.publish("lightBoard/dimmer/2", String(inputBuffer.frame.dimmer_3).c_str()); break;
-        case 17: client.publish("lightBoard/dimmer/3", String(inputBuffer.frame.dimmer_4).c_str()); break;
-        case 18: client.publish("lightBoard/dimmer/4", String(inputBuffer.frame.dimmer_5).c_str()); break;
-        case 19: client.publish("lightBoard/dimmer/5", String(inputBuffer.frame.dimmer_6).c_str()); break;
-        case 20: client.publish("lightBoard/dimmer/6", String(inputBuffer.frame.dimmer_7).c_str()); break;
-
-        case 21: client.publish("lightBoard/current/0", String(inputBuffer.frame.current_1).c_str()); break;
-        case 22: client.publish("lightBoard/current/1", String(inputBuffer.frame.current_2).c_str()); break;
-        case 23: client.publish("lightBoard/current/2", String(inputBuffer.frame.current_3).c_str()); break;
-        case 24: client.publish("lightBoard/current/3", String(inputBuffer.frame.current_4).c_str()); break;
-        case 25: client.publish("lightBoard/current/4", String(inputBuffer.frame.current_5).c_str()); break;
-        case 26: client.publish("lightBoard/current/5", String(inputBuffer.frame.current_6).c_str()); break;
-        case 27: client.publish("lightBoard/current/6", String(inputBuffer.frame.current_7).c_str()); break;
-    }
-
-    mqttSendCounter++;
-
-    if (mqttSendCounter >= 27) {
-        mqttSendCounter = 0;
+    if (!isConnected) {
+        connectClient();
     }
 }
