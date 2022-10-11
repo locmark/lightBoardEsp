@@ -51,6 +51,16 @@ void MQTT_publishChannel6State () {
     }
 }
 
+void publishAllStates () {
+    MQTT_publishChannel0State();
+    MQTT_publishChannel1State();
+    MQTT_publishChannel2State();
+    MQTT_publishChannel3State();
+    MQTT_publishChannel4State();
+    MQTT_publishChannel5State();
+    MQTT_publishChannel6State();
+}
+
 static void callback (char* topic, unsigned char* payload, unsigned int length) {
     Serial.print("[mqtt] Message arrived in topic: ");
     Serial.println(topic);
@@ -156,6 +166,15 @@ void MQTT_init () {
 }
 
 void MQTT_update () {
+    constexpr unsigned long autodiscoveryPubishPerdiod = 100 * 1000UL; // 100 seconds
+    static unsigned long lastAutodiscoveryUpdate = millis();
+
+    if (millis() - lastAutodiscoveryUpdate > autodiscoveryPubishPerdiod) {
+        publishAutodiscoveryMsgs();
+        publishAllStates();
+        lastAutodiscoveryUpdate = millis();
+    }
+
     bool isConnected = client.loop();
 
     if (!isConnected) {
